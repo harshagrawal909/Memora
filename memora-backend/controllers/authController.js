@@ -268,7 +268,7 @@ exports.socialLogin = async (req, res) => {
                                 Your memories are personal and private. We don’t read, analyze, or sell your content.
                             </p>
                             <div style="text-align: center; margin-top: 28px;">
-                                <a href="http://localhost:3000/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #7FAE96; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px;">
+                                <a href="${process.env.FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #7FAE96; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px;">
                                     Start Capturing Memories
                                 </a>
                             </div>
