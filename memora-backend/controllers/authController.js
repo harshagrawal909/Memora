@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 const {OAuth2Client} = require("google-auth-library")
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const cloudinary = require('cloudinary').v2;
+const emailjs = require('@emailjs/nodejs');
 
 
 cloudinary.config({
@@ -14,7 +15,6 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
-
 
 const transporter = nodemailer.createTransport({
     service: 'gmail', 
@@ -29,6 +29,211 @@ const transporter = nodemailer.createTransport({
     logger: true
 });
 
+const SIGNUP_HTML = (verification_url) => `<div style="font-family: Arial, Helvetica, sans-serif; background-color: #f6f8fa; padding: 24px;">
+
+                    <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px;">
+
+                    
+
+                    <h2 style="color: #171A1F; margin-bottom: 16px;">
+
+                        Welcome to Memora 👋
+
+                    </h2>
+
+
+
+                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6;">
+
+                        Thanks for signing up for <strong>Memora</strong>.
+
+                        To keep your memories private and secure, please verify your email address.
+
+                    </p>
+
+
+
+                    <div style="text-align: center; margin: 32px 0;">
+
+                        <a
+
+                        href="${verification_url}"
+
+                        style="
+
+                            display: inline-block;
+
+                            padding: 12px 24px;
+
+                            background-color: #7FAE96;
+
+                            color: #ffffff;
+
+                            text-decoration: none;
+
+                            font-weight: 600;
+
+                            border-radius: 6px;
+
+                            font-size: 14px;
+
+                            border: none;
+
+                            cursor:pointer;
+
+                        "
+
+                        >
+
+                            Verify Email Address
+
+                        </a>
+
+                    </div>
+
+
+
+                    <p style="color: #565D6D; font-size: 13px; line-height: 1.6;">
+
+                        This verification link will expire shortly.
+
+                        If you did not create a Memora account, you can safely ignore this email.
+
+                    </p>
+
+
+
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+
+
+
+                    <p style="color: #9CA3AF; font-size: 12px; text-align: center;">
+
+                        © 2026 Memora  
+
+                        <br />
+
+                        This is an automated message — please do not reply.
+
+                    </p>
+
+
+
+                    </div>
+
+                </div>`
+
+
+const WELCOME_HTML = (name,url) => `<div style="font-family: Arial, Helvetica, sans-serif; background-color: #f6f8fa; padding: 24px;">
+                    <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    
+                    <h2 style="color: #171A1F; margin-bottom: 12px;">
+                        Hi ${name}, Welcome to Memora 💚
+                    </h2>
+
+                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                        Thank you for verifying your email and trusting <strong>Memora</strong>.
+                        We’re glad to have you here.
+                    </p>
+
+                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                        Memora is built with one core belief:
+                        <strong>your memories are personal and private</strong>.
+                    </p>
+
+                    <ul style="color: #565D6D; font-size: 14px; line-height: 1.6; padding-left: 18px; margin-bottom: 20px;">
+                        <li>Your memories are private by default</li>
+                        <li>We don’t read, analyze, or sell your content</li>
+                        <li>You stay in control of what you store</li>
+                    </ul>
+
+                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                        You can now log in and start creating your own private space.
+                    </p>
+
+                    <div style="text-align: center; margin-bottom: 28px;">
+                        <a
+                            href="${url}"
+                        style="
+                            display: inline-block;
+                            padding: 12px 24px;
+                            background-color: #7FAE96;
+                            color: #ffffff;
+                            text-decoration: none;
+                            font-weight: 600;
+                            border-radius: 6px;
+                            font-size: 14px;
+                          cursor:pointer;
+                        "
+                        >
+                            Log in to Memora
+                        </a>
+                    </div>
+
+                    <p style="color: #9CA3AF; font-size: 12px; line-height: 1.5; text-align: center;">
+                        You can review our privacy and usage details anytime inside the app.
+                    </p>
+
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+
+                    <p style="color: #9CA3AF; font-size: 12px; text-align: center;">
+                        © 2026 Memora  
+                        <br />
+                        This is an automated message — please do not reply.
+                    </p>
+
+                    </div>
+                </div>`
+
+const FORGOT_HTML = (resetUrl) => `<div style="font-family: Arial, Helvetica, sans-serif; background-color: #f6f8fa; padding: 24px;">
+                    <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        
+                        <h2 style="color: #171A1F; margin-bottom: 12px;">
+                        Reset your password 🔐
+                        </h2>
+
+                        <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+                            We received a request to reset the password for your <strong>Memora</strong> account.
+                        </p>
+
+                        <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                            Click the button below to set a new password. This link will expire in <strong>1 hour</strong> for security reasons.
+                        </p>
+
+                        <div style="text-align: center; margin-bottom: 28px;">
+                            <a
+                                href="${resetUrl}"
+                                style="
+                                display: inline-block;
+                                padding: 12px 24px;
+                                background-color: #7FAE96;
+                                color: #ffffff;
+                                text-decoration: none;
+                                font-weight: 600;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                "
+                            >
+                                Reset Password
+                            </a>
+                        </div>
+
+                        <p style="color: #565D6D; font-size: 13px; line-height: 1.6;">
+                            If you did not request a password reset, you can safely ignore this email.
+                            Your password will remain unchanged.
+                        </p>
+
+                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+
+                        <p style="color: #9CA3AF; font-size: 12px; text-align: center;">
+                            © 2026 Memora  
+                            <br />
+                            This is an automated message — please do not reply.
+                        </p>
+
+                    </div>
+                </div>`
+
 exports.signup = async (req, res) => {
     const { name, email, password } = req.body;
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -39,58 +244,21 @@ exports.signup = async (req, res) => {
             [name, email, hashedPassword,false,verificationToken]
         );
         const verificationUrl = `${process.env.FRONTEND_URL}/verify?token=${verificationToken}`;
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Verify your Memora Account',
-            html: `
-                <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f6f8fa; padding: 24px;">
-                    <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px;">
-                    
-                    <h2 style="color: #171A1F; margin-bottom: 16px;">
-                        Welcome to Memora 👋
-                    </h2>
-
-                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6;">
-                        Thanks for signing up for <strong>Memora</strong>.
-                        To keep your memories private and secure, please verify your email address.
-                    </p>
-
-                    <div style="text-align: center; margin: 32px 0;">
-                        <a 
-                        href="${verificationUrl}"
-                        style="
-                            display: inline-block;
-                            padding: 12px 24px;
-                            background-color: #7FAE96;
-                            color: #ffffff;
-                            text-decoration: none;
-                            font-weight: 600;
-                            border-radius: 6px;
-                            font-size: 14px;
-                        "
-                        >
-                            Verify Email Address
-                        </a>
-                    </div>
-
-                    <p style="color: #565D6D; font-size: 13px; line-height: 1.6;">
-                        This verification link will expire shortly.
-                        If you did not create a Memora account, you can safely ignore this email.
-                    </p>
-
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-
-                    <p style="color: #9CA3AF; font-size: 12px; text-align: center;">
-                        © ${new Date().getFullYear()} Memora  
-                        <br />
-                        This is an automated message — please do not reply.
-                    </p>
-
-                    </div>
-                </div>
-            `
-        });
+        const signupContent = SIGNUP_HTML(verificationUrl);
+        const templateParams = {
+                user_email: email,
+                email_title: "Verify your Memora Account",
+                email_content: signupContent
+        };
+        await emailjs.send(
+            process.env.EMAILJS_SERVICE_ID,
+            process.env.EMAILJS_TEMPLATE_ID,
+            templateParams,
+            {
+                publicKey: process.env.EMAILJS_PUBLIC_KEY,
+                privateKey: process.env.EMAILJS_PRIVATE_KEY,
+            }
+        );       
         res.status(201).json({ message: "Signup successful! Check your email to verify account." });
     } catch (err) {
         if (err.code === "23505") {
@@ -132,73 +300,23 @@ exports.verify = async (req, res) => {
             return res.status(400).json({ message: "Invalid or expired token" });
         }
         const user = result.rows[0];
+        const url = `${process.env.FRONTEND_URL}/login`
+        const verifyContent = WELCOME_HTML(user.name,url)
+        const templateParams = {
+                user_email: user.email,
+                email_content:verifyContent,
+                email_title:"Welcome to Memora!"
+        };
+        await emailjs.send(
+            process.env.EMAILJS_SERVICE_ID,
+            process.env.EMAILJS_TEMPLATE_ID,
+            templateParams,
+            {
+                publicKey: process.env.EMAILJS_PUBLIC_KEY,
+                privateKey: process.env.EMAILJS_PRIVATE_KEY,
+            }
+        ); 
 
-        await transporter.sendMail({
-            from: `"Memora Team" <${process.env.EMAIL_USER}>`,
-            to: user.email,
-            subject: 'Welcome to Memora!',
-            html: `
-                <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f6f8fa; padding: 24px;">
-                    <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                    
-                    <h2 style="color: #171A1F; margin-bottom: 12px;">
-                        Hi ${user.name}, Welcome to Memora 💚
-                    </h2>
-
-                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                        Thank you for verifying your email and trusting <strong>Memora</strong>.
-                        We’re glad to have you here.
-                    </p>
-
-                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                        Memora is built with one core belief:
-                        <strong>your memories are personal and private</strong>.
-                    </p>
-
-                    <ul style="color: #565D6D; font-size: 14px; line-height: 1.6; padding-left: 18px; margin-bottom: 20px;">
-                        <li>Your memories are private by default</li>
-                        <li>We don’t read, analyze, or sell your content</li>
-                        <li>You stay in control of what you store</li>
-                    </ul>
-
-                    <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-                        You can now log in and start creating your own private space.
-                    </p>
-
-                    <div style="text-align: center; margin-bottom: 28px;">
-                        <a
-                            href="${process.env.FRONTEND_URL}/login"
-                        style="
-                            display: inline-block;
-                            padding: 12px 24px;
-                            background-color: #7FAE96;
-                            color: #ffffff;
-                            text-decoration: none;
-                            font-weight: 600;
-                            border-radius: 6px;
-                            font-size: 14px;
-                        "
-                        >
-                            Log in to Memora
-                        </a>
-                    </div>
-
-                    <p style="color: #9CA3AF; font-size: 12px; line-height: 1.5; text-align: center;">
-                        You can review our privacy and usage details anytime inside the app.
-                    </p>
-
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-
-                    <p style="color: #9CA3AF; font-size: 12px; text-align: center;">
-                        © ${new Date().getFullYear()} Memora  
-                        <br />
-                        This is an automated message — please do not reply.
-                    </p>
-
-                    </div>
-                </div>
-            `
-        });
 
         res.json({ message: "Email verified successfully! You can now log in." });
     }catch{
@@ -246,45 +364,23 @@ exports.socialLogin = async (req, res) => {
         );
         const user = result.rows[0];
 
-        console.log("Google Login:", {
-            email,
-            isNewUser
-        });
-        if (isNewUser) {
-
-            try {
-                await transporter.sendMail({
-                    from: `"Memora Team" <${process.env.EMAIL_USER}>`,
-                    to: user.email,
-                    subject: 'Welcome to Memora!',
-                    html: `
-                        <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f6f8fa; padding: 24px;">
-                            <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                            <h2 style="color: #171A1F; margin-bottom: 12px;">Hi ${user.name}, Welcome to Memora 💚</h2>
-                            <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                                Thank you for joining <strong>Memora</strong> via ${provider}. We’re glad to have you here.
-                            </p>
-                            <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                                Your memories are personal and private. We don’t read, analyze, or sell your content.
-                            </p>
-                            <div style="text-align: center; margin-top: 28px;">
-                                <a href="${process.env.FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #7FAE96; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px; font-size: 14px;">
-                                    Start Capturing Memories
-                                </a>
-                            </div>
-                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-                            <p style="color: #9CA3AF; font-size: 12px; text-align: center;">
-                                © ${new Date().getFullYear()} Memora
-                            </p>
-                            </div>
-                        </div>
-                    `
-                });
-                console.log("Welcome email sent successfully");
-            } catch (mailError) {
-                console.error("Failed to send welcome email:", mailError);
+        const url = `${process.env.FRONTEND_URL}/login`
+        const content=WELCOME_HTML(user.name,url)
+        const templateParams = {
+                user_email: user.email,
+                email_title: "Welcome to Memora!",
+                email_content: content
+        };
+        await emailjs.send(
+            process.env.EMAILJS_SERVICE_ID,
+            process.env.EMAILJS_TEMPLATE_ID,
+            templateParams,
+            {
+                publicKey: process.env.EMAILJS_PUBLIC_KEY,
+                privateKey: process.env.EMAILJS_PRIVATE_KEY,
             }
-        }
+        ); 
+
 
         const memoraToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
         res.json({ token: memoraToken, user: { name: user.name, email: user.email, avatar: user.avatar_url } });
@@ -446,62 +542,22 @@ exports.forgotPassword = async (req,res) => {
         );
 
         const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        const content = FORGOT_HTML(resetUrl)
 
-        await transporter.sendMail({
-            from: `"Memora Team" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: 'Reset your Memora Password',
-            html: `
-                <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f6f8fa; padding: 24px;">
-                    <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                        
-                        <h2 style="color: #171A1F; margin-bottom: 12px;">
-                        Reset your password 🔐
-                        </h2>
-
-                        <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                            We received a request to reset the password for your <strong>Memora</strong> account.
-                        </p>
-
-                        <p style="color: #565D6D; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-                            Click the button below to set a new password. This link will expire in <strong>1 hour</strong> for security reasons.
-                        </p>
-
-                        <div style="text-align: center; margin-bottom: 28px;">
-                            <a
-                                href="${resetUrl}"
-                                style="
-                                display: inline-block;
-                                padding: 12px 24px;
-                                background-color: #7FAE96;
-                                color: #ffffff;
-                                text-decoration: none;
-                                font-weight: 600;
-                                border-radius: 6px;
-                                font-size: 14px;
-                                "
-                            >
-                                Reset Password
-                            </a>
-                        </div>
-
-                        <p style="color: #565D6D; font-size: 13px; line-height: 1.6;">
-                            If you did not request a password reset, you can safely ignore this email.
-                            Your password will remain unchanged.
-                        </p>
-
-                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-
-                        <p style="color: #9CA3AF; font-size: 12px; text-align: center;">
-                            © ${new Date().getFullYear()} Memora  
-                            <br />
-                            This is an automated message — please do not reply.
-                        </p>
-
-                    </div>
-                </div>
-            `
-        });
+        const templateParams = {
+            user_email:email,
+            email_content:content,
+            email_title:"Reset your Memora Account"
+        }
+        await emailjs.send(
+            process.env.EMAILJS_SERVICE_ID,
+            process.env.EMAILJS_TEMPLATE_ID,
+            templateParams,
+            {
+                publicKey: process.env.EMAILJS_PUBLIC_KEY,
+                privateKey: process.env.EMAILJS_PRIVATE_KEY,
+            }
+        )
 
         res.json({ message: "Password reset link sent to your email." });
 
